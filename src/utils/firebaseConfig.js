@@ -1,14 +1,16 @@
 import firebase from 'firebase';
 
 var firebaseConfig = {
-    apiKey: "AIzaSyA6691ONs5iVichyrXw-eVb93kqG3wMVHc",
-    authDomain: "nyous-tarde.firebaseapp.com",
-    projectId: "nyous-tarde",
-    storageBucket: "nyous-tarde.appspot.com",
-    messagingSenderId: "772871087957",
-    appId: "1:772871087957:web:7fac0c9d221b9e82ac31dc"
-};
+    apiKey: "AIzaSyC5RB-rygEx_BfBGB9Rs5AX4xXqr9MLHEE",
+    authDomain: "nyoustarde.firebaseapp.com",
+    projectId: "nyoustarde",
+    storageBucket: "nyoustarde.appspot.com",
+    messagingSenderId: "913997677870",
+    appId: "1:913997677870:web:1509de482d225921fc26bf"
+  };
 
-firebase.initializeApp(firebaseConfig);
+const app = firebase.initializeApp(firebaseConfig);
 
+// Exporto o firestore para ser utilizado nos components
+export const db = app.firestore();
 export default firebaseConfig;
