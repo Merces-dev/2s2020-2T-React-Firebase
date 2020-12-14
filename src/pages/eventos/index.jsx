@@ -1,11 +1,15 @@
 import React,{useState, useEffect} from 'react';
 import {Form, Button, Table, Card, Container} from 'react-bootstrap';
-import {db} from '../../utils/firebaseConfig';
+import {db, storage} from '../../utils/firebaseConfig';
+import FileUploader from 'react-firebase-file-uploader';
+
 const EventosPage = () =>{
     const [id, setId] = useState(0);
     const [nome, setNome] = useState('');
     const [descricao, setDescricao] = useState('');
     const [eventos, setEventos] = useState([]);
+    const [urlImagem, setUrlImagem] = useState('');
+
     useEffect(() =>{
         listarEventos();
     }, [])
@@ -14,14 +18,15 @@ const EventosPage = () =>{
         try{
             db.collection('eventos')
             .get()
-            .then(
-                (result) => { console.log(result.docs)
-        
-                const data = result.docs.maps(doc =>{
+            .then((result) => { 
+                console.log(result.docs);
+                const data = result.docs.map(doc =>{
                     return{
                         id: doc.id,
                         nome: doc.data().nome,
                         descricao: doc.data().descricao,
+                        urlImagem: doc.data().urlImagem
+                        
                     }
                 })
                 setEventos(data);
@@ -36,13 +41,14 @@ const EventosPage = () =>{
         event.preventDefault();
         const evento = {
             nome: nome,
-            decricao: descricao
+            descricao: descricao,
+            urlImagem: urlImagem
         }
         if(id === 0){
             db.collection('eventos')
             .add(evento)
             .then(() => {
-                alert('evento cadastrado');
+                alert('Evento cadastrado!');
                 listarEventos();
                 limparCampos();
             })
@@ -76,12 +82,14 @@ const EventosPage = () =>{
     const editar = (event) => {
         event.preventDefault();
         try{
-            db.collection('eventos').doc('event.target.value')
+            db.collection('eventos')
+            .doc(event.target.value)
             .get()
-            .then(result=> {
+            .then(doc=> {
                 setId(doc.id);
                 setNome(doc.data().nome);
                 setDescricao(doc.data().descricao);
+                setUrlImagem(doc.data().urlImagem)
             })
         }
         catch(error){
@@ -92,6 +100,20 @@ const EventosPage = () =>{
         setId(0);
         setNome('');
         setDescricao('');
+        setUrlImagem('');
+    }
+    const handleUploadError = error => {
+        console.error(error);
+    }
+
+    const handleUploadSuccess = filename => {
+        console.error('SUCESSO UPLOAD: ' + filename);
+        storage
+        .ref('imagens')
+        .child(filename)
+        .getDownloadURL()
+        .then(url => setUrlImagem(url))
+        .catch(error => console.error(error))
     }
 
     return (
@@ -102,6 +124,21 @@ const EventosPage = () =>{
                 <Card>
                     <Card.Body>
                         <Form onSubmit={event => salvar(event)}>
+                            <Form.Group>
+                                {urlImagem && <img src={urlImagem} style={{width: '200px'}}/>}
+                                <label style={{backgroundColor: '#000', color: '#fff', padding: 14, borderRadius: 5, cursor: 'pointer' }}>
+                                <FileUploader 
+                                    
+                                    accept="image/+"
+                                    name="urlImagem"
+                                    randomizeFilename
+                                    storageRef={storage.ref('imagens')}
+                                    onUploadError={handleUploadError}
+                                    onUploadSuccess={handleUploadSuccess}
+                                />
+                                </label>
+                            </Form.Group>
+
                             <Form.Group controlId="formBasicNome">
                                 <Form.Label>Nome</Form.Label>
                                 <Form.Control type="text" value={nome} onChange={event => setNome(event.target.value)} placeholder="Nome do evento"></Form.Control>
@@ -121,11 +158,9 @@ const EventosPage = () =>{
                 <Table striped bordered hover>
                     <thead>
                         <tr>
-                            <th>Imagem</th>
                             <th>Nome</th>
-                            <th>Link</th>
                             <th>Descrição</th>
-                            <th>Categoria</th>
+                            <th>Imagem</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -135,8 +170,9 @@ const EventosPage = () =>{
                                 return (
                                     <tr key={index}>
                                         <td>{item.nome}</td>
-                                        <td><a href={item.link} target="_blank">Ir para o evento</a></td>
                                         <td>{item.descricao}</td>
+                                        <td><img src={item.urlImagem} style={{ width: '150px' }}/></td>
+
                                         <td>
                                             <Button variant="warning" value={item.id} onClick={event => editar(event)} >Editar</Button>
                                             <Button variant="danger" value={item.id} onClick={event => remover(event)} style={{ marginLeft : '40px'}}>Remover</Button>
